@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meshify — Real-time Audio Reactive Face Visualizer</title>
+<meta name="description" content="Turn your webcam into a living digital mask that reacts to music. 468-point face mesh + hand tracking, 6 visual modes, particle trails. Free, runs in your browser.">
+<meta property="og:title" content="Meshify — Audio Reactive Face Visualizer">
+<meta property="og:description" content="Your face. Your music. Live. Real-time audio-reactive face mesh with particle trails.">
+<meta property="og:image" content="/og-image.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/styles/shared.css">
+<link rel="stylesheet" href="/styles/landing.css">
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+  <canvas class="hero-canvas" id="heroCanvas"></canvas>
+  <div class="hero-content">
+    <h1>Your face.<br>Your music.<br>Live.</h1>
+    <p>Turn your webcam into a living digital mask that deforms with sound. 468-point face mesh, hand tracking, particle trails. Free. Nothing to install.</p>
+    <a href="/app" class="cta-btn">Start Creating →</a>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="section">
+  <h2 class="section-title">How it works</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Enable Camera</h3>
+      <p>Grant camera + mic access. Everything runs locally in your browser — nothing is uploaded.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Play Music</h3>
+      <p>Play any song near your mic. The mesh reacts to bass, mid, and high frequencies in real-time.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Share Clips</h3>
+      <p>Record your session as WebM video. Share presets with a single URL. Post to TikTok, Reels, or YouTube.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Filter gallery -->
+<section class="section">
+  <h2 class="section-title">6 Visual Modes</h2>
+  <div class="filter-grid">
+    <div class="filter-card">
+      <div class="filter-icon">◇</div>
+      <h4>Wireframe</h4>
+      <p>Clean geometric mesh with subtle grid lines</p>
+    </div>
+    <div class="filter-card">
+      <div class="filter-icon">✦</div>
+      <h4>Neon</h4>
+      <p>Glowing edges with dynamic shadow blur</p>
+    </div>
+    <div class="filter-card">
+      <div class="filter-icon">▤</div>
+      <h4>Hologram</h4>
+      <p>Scanlines and flicker for a sci-fi look</p>
+    </div>
+    <div class="filter-card">
+      <div class="filter-icon">▦</div>
+      <h4>Glitch</h4>
+      <p>RGB split and random block artifacts</p>
+    </div>
+    <div class="filter-card">
+      <div class="filter-icon">◉</div>
+      <h4>Thermal</h4>
+      <p>Heat map visualization based on depth</p>
+    </div>
+    <div class="filter-card">
+      <div class="filter-icon">☢</div>
+      <h4>X-Ray</h4>
+      <p>High-contrast glow with ethereal edges</p>
+    </div>
+  </div>
+</section>
+
+<!-- Tech section -->
+<section class="section">
+  <div class="tech-banner">
+    <h3>Runs 100% in your browser</h3>
+    <p>Nothing to install. Nothing uploaded. Your camera feed and audio never leave your device.<br>Powered by MediaPipe, Web Audio API, and Canvas 2D.</p>
+    <div class="tech-tags">
+      <span class="tech-tag">MediaPipe Holistic</span>
+      <span class="tech-tag">Web Audio API</span>
+      <span class="tech-tag">Canvas 2D</span>
+      <span class="tech-tag">60fps</span>
+      <span class="tech-tag">Zero Install</span>
+    </div>
+  </div>
+</section>
+
+<!-- Ad slot -->
+<div class="ad-slot-banner" aria-label="Advertisement"></div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-links">
+    <a href="/app">Launch App</a>
+    <a href="/privacy">Privacy Policy</a>
+  </div>
+  <p>meshify.app — Audio reactive face visualizer. All processing happens in your browser.</p>
+</footer>
+
+<script type="module" src="/src/landing.js"></script>
+</body>
+</html>

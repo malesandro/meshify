@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Face + Hands × Audio Reactive</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg:#06060b;--surface:#0d0d16;--card:#12121e;
+    --edge:#1a1a2e;--dim:#4d4d70;--text:#c8c8dd;--bright:#eeeef5;
+    --accent:#00ffaa;--accent2:#ff3366;--accent3:#5533ff;
+    --gold:#ffaa22;--cyan:#00ccff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;height:100vh;overflow:hidden;display:flex;}
+
+  .sidebar{width:290px;min-width:290px;background:var(--surface);border-right:1px solid var(--edge);display:flex;flex-direction:column;z-index:10;}
+  .logo{padding:16px 18px;border-bottom:1px solid var(--edge);font-family:'Syne',sans-serif;font-weight:800;font-size:15px;letter-spacing:-0.5px;display:flex;align-items:center;gap:9px;}
+  .logo .dot{width:7px;height:7px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent);animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+  .controls{flex:1;overflow-y:auto;padding:12px 14px;}
+  .controls::-webkit-scrollbar{width:4px;}
+  .controls::-webkit-scrollbar-track{background:transparent;}
+  .controls::-webkit-scrollbar-thumb{background:var(--edge);border-radius:2px;}
+
+  .stitle{font-size:8px;text-transform:uppercase;letter-spacing:2.5px;color:var(--dim);margin:16px 0 7px;}
+  .stitle:first-child{margin-top:0;}
+
+  .meter-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:9px;color:var(--dim);}
+  .meter-label{width:34px;}
+  .meter-bar{flex:1;height:3px;background:var(--edge);border-radius:2px;overflow:hidden;}
+  .meter-fill{height:100%;width:0%;border-radius:2px;transition:width 0.05s linear;}
+  .m-bass{background:var(--accent2);}.m-mid{background:var(--gold);}.m-high{background:var(--cyan);}.m-nrg{background:var(--accent3);}
+
+  .mood-badge{display:inline-block;padding:3px 9px;border-radius:10px;font-size:9px;font-weight:500;background:var(--edge);color:var(--dim);transition:all 0.4s;margin-top:5px;}
+
+  .fgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
+  .fb{background:var(--bg);border:1px solid var(--edge);color:var(--dim);padding:7px 4px;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9px;transition:all 0.2s;text-align:center;}
+  .fb:hover{border-color:var(--accent);color:var(--text);}
+  .fb.active{background:rgba(0,255,170,0.06);border-color:var(--accent);color:var(--accent);}
+
+  .sg{margin-bottom:8px;}
+  .sh{display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px;}
+  .sv{color:var(--accent);font-weight:500;}
+  input[type="range"]{-webkit-appearance:none;width:100%;height:3px;background:var(--edge);border-radius:2px;outline:none;}
+  input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;background:var(--accent);border-radius:50%;cursor:pointer;}
+
+  .color-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
+  .color-row label{font-size:9px;flex:1;}
+  .color-row input[type="color"]{width:26px;height:20px;border:1px solid var(--edge);border-radius:3px;background:var(--bg);cursor:pointer;padding:0;}
+
+  .trow{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:9px;}
+  .tgl{width:30px;height:16px;background:var(--edge);border-radius:8px;cursor:pointer;position:relative;transition:background 0.2s;}
+  .tgl.on{background:var(--accent);}
+  .tgl::after{content:'';position:absolute;width:12px;height:12px;background:white;border-radius:50%;top:2px;left:2px;transition:transform 0.2s;}
+  .tgl.on::after{transform:translateX(14px);}
+
+  .main{flex:1;display:flex;flex-direction:column;position:relative;}
+  .top-bar{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--edge);font-size:9px;color:var(--dim);}
+  .fps{font-variant-numeric:tabular-nums;color:var(--accent);}
+  .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at center,#0c0c16 0%,var(--bg) 70%);}
+  canvas#out{max-width:100%;max-height:100%;border-radius:6px;}
+  video#cam{position:absolute;opacity:0;pointer-events:none;}
+
+  .ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(6,6,11,0.97);z-index:20;gap:12px;}
+  .ov.hidden{display:none;}
+  .ov h1{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,var(--accent),var(--accent3),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .ov p{color:var(--dim);font-size:11px;max-width:420px;text-align:center;line-height:1.6;}
+  .sbtn{margin-top:8px;padding:12px 30px;background:var(--accent);color:var(--bg);border:none;border-radius:6px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all 0.2s;}
+  .sbtn:hover{transform:scale(1.03);box-shadow:0 0 28px rgba(0,255,170,0.2);}
+  .stat{font-size:10px;color:var(--accent2);min-height:15px;}
+
+  .capture-row{display:flex;gap:4px;}
+  .capture-row .fb{flex:1;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo"><div class="dot"></div>FACE + HANDS × AUDIO</div>
+  <div class="controls">
+
+    <div class="stitle">Audio</div>
+    <div class="meter-row"><span class="meter-label">Bass</span><div class="meter-bar"><div class="meter-fill m-bass" id="mB"></div></div></div>
+    <div class="meter-row"><span class="meter-label">Mid</span><div class="meter-bar"><div class="meter-fill m-mid" id="mM"></div></div></div>
+    <div class="meter-row"><span class="meter-label">High</span><div class="meter-bar"><div class="meter-fill m-high" id="mH"></div></div></div>
+    <div class="meter-row"><span class="meter-label">Nrg</span><div class="meter-bar"><div class="meter-fill m-nrg" id="mN"></div></div></div>
+    <div class="mood-badge" id="mood">Silent</div>
+
+    <div class="stitle">Visual Mode</div>
+    <div class="fgrid">
+      <button class="fb active" data-f="wireframe">Wire</button>
+      <button class="fb" data-f="neon">Neon</button>
+      <button class="fb" data-f="hologram">Holo</button>
+      <button class="fb" data-f="glitch">Glitch</button>
+      <button class="fb" data-f="thermal">Thermal</button>
+      <button class="fb" data-f="xray">X-Ray</button>
+    </div>
+
+    <div class="stitle">Face Deformation</div>
+    <div class="sg"><div class="sh"><span>Bass → Expand</span><span class="sv" id="v_dB">1.0</span></div><input type="range" id="dB" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Mid → Wobble</span><span class="sv" id="v_dM">1.0</span></div><input type="range" id="dM" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>High → Jitter</span><span class="sv" id="v_dH">0.8</span></div><input type="range" id="dH" min="0" max="3" step="0.1" value="0.8"></div>
+    <div class="sg"><div class="sh"><span>Beat → Pulse</span><span class="sv" id="v_dP">1.2</span></div><input type="range" id="dP" min="0" max="3" step="0.1" value="1.2"></div>
+
+    <div class="stitle">Hand Deformation</div>
+    <div class="sg"><div class="sh"><span>Finger Splay</span><span class="sv" id="v_hS">1.0</span></div><input type="range" id="hS" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Hand Wave</span><span class="sv" id="v_hW">1.0</span></div><input type="range" id="hW" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Finger Trails</span><span class="sv" id="v_hT">1.5</span></div><input type="range" id="hT" min="0" max="3" step="0.1" value="1.5"></div>
+
+    <div class="stitle">Physics</div>
+    <div class="sg"><div class="sh"><span>Spring-back</span><span class="sv" id="v_sp">0.08</span></div><input type="range" id="sp" min="0.01" max="0.3" step="0.01" value="0.08"></div>
+    <div class="sg"><div class="sh"><span>Mood Sensitivity</span><span class="sv" id="v_ms">1.0</span></div><input type="range" id="ms" min="0.2" max="3" step="0.1" value="1.0"></div>
+
+    <div class="stitle">Particles</div>
+    <div class="sg"><div class="sh"><span>Trail Density</span><span class="sv" id="v_pD">1.0</span></div><input type="range" id="pD" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Trail Life</span><span class="sv" id="v_pL">1.0</span></div><input type="range" id="pL" min="0.2" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Trail Size</span><span class="sv" id="v_pS">1.0</span></div><input type="range" id="pS" min="0.3" max="3" step="0.1" value="1.0"></div>
+
+    <div class="stitle">Rendering</div>
+    <div class="sg"><div class="sh"><span>Line Width</span><span class="sv" id="v_lw">1.5</span></div><input type="range" id="lw" min="0.3" max="4" step="0.1" value="1.5"></div>
+    <div class="sg"><div class="sh"><span>Glow</span><span class="sv" id="v_gl">8</span></div><input type="range" id="gl" min="0" max="40" step="1" value="8"></div>
+
+    <div class="stitle">Colors</div>
+    <div class="color-row"><label>Face</label><input type="color" id="cF" value="#00ffaa"></div>
+    <div class="color-row"><label>Left Hand</label><input type="color" id="cL" value="#ff3366"></div>
+    <div class="color-row"><label>Right Hand</label><input type="color" id="cR" value="#5533ff"></div>
+    <div class="color-row"><label>Beat Flash</label><input type="color" id="cBt" value="#ffaa22"></div>
+    <div class="color-row"><label>Particles</label><input type="color" id="cP" value="#00ccff"></div>
+
+    <div class="stitle">Display</div>
+    <div class="trow"><span>Video Feed</span><div class="tgl" id="tV" onclick="this.classList.toggle('on')"></div></div>
+    <div class="trow"><span>Points</span><div class="tgl on" id="tPt" onclick="this.classList.toggle('on')"></div></div>
+    <div class="trow"><span>Mesh Lines</span><div class="tgl on" id="tMs" onclick="this.classList.toggle('on')"></div></div>
+    <div class="trow"><span>Particles</span><div class="tgl on" id="tPa" onclick="this.classList.toggle('on')"></div></div>
+    <div class="trow"><span>Mirror</span><div class="tgl on" id="tMi" onclick="this.classList.toggle('on')"></div></div>
+
+    <div class="stitle">Capture</div>
+    <div class="capture-row">
+      <button class="fb" onclick="screenshot()">📸 Photo</button>
+      <button class="fb" id="recBtn" onclick="toggleRec()">⏺ Record</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="top-bar">
+    <span>468 face + 42 hand landmarks · particle trails</span>
+    <span class="fps" id="fps">--</span>
+  </div>
+  <div class="canvas-wrap">
+    <video id="cam" autoplay playsinline></video>
+    <canvas id="out" width="1280" height="720"></canvas>
+    <div class="ov" id="ov">
+      <h1>Face + Hands</h1>
+      <p>Audio-reactive face &amp; hand tracking with particle trails. Your mesh deforms with the music and leaves glowing traces in the air. Needs camera + microphone.</p>
+      <button class="sbtn" onclick="init()">Enable Camera + Mic</button>
+      <div class="stat" id="stat"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+
+<script>
+// ═══════════════════════════════
+// HELPERS
+// ═══════════════════════════════
+const $=id=>document.getElementById(id);
+const V=id=>parseFloat($(id).value);
+const C=id=>$(id).value;
+const T=id=>$(id).classList.contains('on');
+
+// Wire sliders
+document.querySelectorAll('input[type="range"]').forEach(el=>{
+  const vEl=$('v_'+el.id);
+  if(vEl) el.addEventListener('input',()=>vEl.textContent=el.value);
+});
+
+let filter='wireframe';
+document.querySelectorAll('.fb[data-f]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.fb[data-f]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');filter=b.dataset.f;
+  });
+});
+
+function hexRgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function lerpC(a,b,t){const c1=hexRgb(a),c2=hexRgb(b);return`rgb(${Math.round(c1[0]+(c2[0]-c1[0])*t)},${Math.round(c1[1]+(c2[1]-c1[1])*t)},${Math.round(c1[2]+(c2[2]-c1[2])*t)})`;}
+
+// ═══════════════════════════════
+// CANVAS
+// ═══════════════════════════════
+const video=$('cam'), canvas=$('out'), ctx=canvas.getContext('2d');
+let W=1280,H=720,time=0;
+
+// ═══════════════════════════════
+// AUDIO
+// ═══════════════════════════════
+let audioCtx,analyser,freqA,timeA;
+const AU={bass:0,mid:0,high:0,vol:0,energy:0,beat:false};
+let lastBeatT=0;
+
+function audio(){
+  analyser.getByteFrequencyData(freqA);
+  analyser.getByteTimeDomainData(timeA);
+  const n=freqA.length,s=V('ms');
+  let bS=0,mS=0,hS=0;
+  const bE=Math.floor(n*0.08),mE=Math.floor(n*0.4);
+  for(let i=0;i<bE;i++)bS+=freqA[i];
+  for(let i=bE;i<mE;i++)mS+=freqA[i];
+  for(let i=mE;i<n;i++)hS+=freqA[i];
+  AU.bass=Math.min(1,(bS/bE/255)*s*1.5);
+  AU.mid=Math.min(1,(mS/(mE-bE)/255)*s*1.8);
+  AU.high=Math.min(1,(hS/(n-mE)/255)*s*2.5);
+  let rms=0;for(let i=0;i<timeA.length;i++){const v=(timeA[i]-128)/128;rms+=v*v;}
+  AU.vol=Math.min(1,Math.sqrt(rms/timeA.length)*3*s);
+  AU.energy=AU.bass*0.4+AU.mid*0.35+AU.high*0.25;
+  const now=performance.now();
+  if(AU.bass>0.5&&now-lastBeatT>200){AU.beat=true;lastBeatT=now;}else AU.beat=false;
+  $('mB').style.width=(AU.bass*100)+'%';
+  $('mM').style.width=(AU.mid*100)+'%';
+  $('mH').style.width=(AU.high*100)+'%';
+  $('mN').style.width=(AU.energy*100)+'%';
+  const md=$('mood');
+  if(AU.energy>0.7){md.textContent='🔥 Intense';md.style.background='rgba(255,50,50,0.2)';md.style.color='#ff5544';}
+  else if(AU.energy>0.4){md.textContent='⚡ Energetic';md.style.background='rgba(255,170,0,0.15)';md.style.color='#ffaa00';}
+  else if(AU.energy>0.15){md.textContent='🌊 Flowing';md.style.background='rgba(0,200,100,0.12)';md.style.color='#00cc66';}
+  else if(AU.energy>0.04){md.textContent='🌙 Calm';md.style.background='rgba(50,100,255,0.12)';md.style.color='#4488ff';}
+  else{md.textContent='Silent';md.style.background='var(--edge)';md.style.color='var(--dim)';}
+}
+
+// ═══════════════════════════════
+// DEFORMATION
+// ═══════════════════════════════
+const D={expand:0,wobble:0,jitter:0,pulse:0,handSplay:0,handWave:0,
+  tE:0,tW:0,tJ:0,tP:0,tHS:0,tHW:0};
+
+function updateDeform(){
+  const sp=V('sp');
+  D.tE=AU.bass*V('dB')*35; D.tW=AU.mid*V('dM')*20;
+  D.tJ=AU.high*V('dH')*12; D.tP=AU.beat?V('dP')*0.15:0;
+  D.tHS=AU.bass*V('hS')*25; D.tHW=AU.mid*V('hW')*15;
+  D.expand+=(D.tE-D.expand)*sp; D.wobble+=(D.tW-D.wobble)*sp;
+  D.jitter+=(D.tJ-D.jitter)*sp*2; D.pulse+=(D.tP-D.pulse)*0.15;
+  D.handSplay+=(D.tHS-D.handSplay)*sp; D.handWave+=(D.tHW-D.handWave)*sp;
+  if(!AU.beat)D.pulse*=0.88;
+}
+
+function deformFace(p,i,cx,cy){
+  let x=p.x*W,y=p.y*H;
+  const dx=x-cx,dy=y-cy,dist=Math.sqrt(dx*dx+dy*dy)||1;
+  const nx=dx/dist,ny=dy/dist;
+  x+=nx*D.expand*(0.5+dist/200);
+  y+=ny*D.expand*(0.5+dist/200);
+  const wp=time*6+i*0.15;
+  x+=Math.sin(wp)*D.wobble*(dist/150);
+  y+=Math.cos(wp*0.7)*D.wobble*0.6*(dist/150);
+  x+=(Math.random()-0.5)*D.jitter;
+  y+=(Math.random()-0.5)*D.jitter;
+  x=cx+(x-cx)*(1+D.pulse);
+  y=cy+(y-cy)*(1+D.pulse);
+  return{x,y,z:p.z};
+}
+
+// Hand connections (MediaPipe hand landmark topology)
+// 0=wrist, 1-4=thumb, 5-8=index, 9-12=middle, 13-16=ring, 17-20=pinky
+const HAND_CONNS=[
+  [0,1],[1,2],[2,3],[3,4],         // thumb
+  [0,5],[5,6],[6,7],[7,8],         // index
+  [0,9],[9,10],[10,11],[11,12],    // middle
+  [0,13],[13,14],[14,15],[15,16],  // ring
+  [0,17],[17,18],[18,19],[19,20],  // pinky
+  [5,9],[9,13],[13,17],            // palm cross
+];
+
+// Finger tip indices
+const FINGERTIPS=[4,8,12,16,20];
+// All joint indices per finger (for detailed phalange tracking)
+const FINGERS=[[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20]];
+
+function deformHand(pts,cx,cy){
+  // cx,cy = wrist position as anchor
+  const wrist={x:pts[0].x*W,y:pts[0].y*H};
+  
+  return pts.map((p,i)=>{
+    let x=p.x*W, y=p.y*H;
+    
+    // Splay: push fingertips outward from wrist
+    if(i>0){
+      const dx=x-wrist.x,dy=y-wrist.y;
+      const dist=Math.sqrt(dx*dx+dy*dy)||1;
+      const nx=dx/dist,ny=dy/dist;
+      // More splay for fingertips, less for base joints
+      const fingerFactor = FINGERTIPS.includes(i)?1.0:
+                          (i%4===3)?0.7:(i%4===2)?0.4:0.2;
+      x+=nx*D.handSplay*fingerFactor;
+      y+=ny*D.handSplay*fingerFactor;
+    }
+    
+    // Wave: sinusoidal along fingers
+    const wp=time*5+i*0.4;
+    x+=Math.sin(wp)*D.handWave*(i>0?1:0.2);
+    y+=Math.cos(wp*0.8)*D.handWave*0.5*(i>0?1:0.2);
+    
+    // Jitter
+    x+=(Math.random()-0.5)*D.jitter*0.8;
+    y+=(Math.random()-0.5)*D.jitter*0.8;
+    
+    // Pulse
+    x=wrist.x+(x-wrist.x)*(1+D.pulse);
+    y=wrist.y+(y-wrist.y)*(1+D.pulse);
+    
+    return{x,y,z:p.z||0};
+  });
+}
+
+// ═══════════════════════════════
+// PARTICLE SYSTEM
+// ═══════════════════════════════
+let particles=[];
+const MAX_PARTICLES=3000;
+
+class Particle{
+  constructor(x,y,color,sz){
+    this.x=x;this.y=y;this.color=color;
+    this.vx=(Math.random()-0.5)*1.5;
+    this.vy=(Math.random()-0.5)*1.5-0.5;
+    this.life=1;
+    this.decay=0.008/Math.max(0.3,V('pL'));
+    this.size=sz*V('pS')*(0.5+Math.random()*0.8);
+    this.alpha=0.7;
+  }
+  update(){
+    this.life-=this.decay;
+    this.x+=this.vx;this.y+=this.vy;
+    this.vx*=0.98;this.vy*=0.98;
+    this.size*=0.995;
+  }
+  draw(ctx){
+    if(this.life<=0)return;
+    ctx.globalAlpha=this.life*this.alpha;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,Math.max(0.3,this.size),0,Math.PI*2);
+    ctx.fillStyle=this.color;
+    ctx.fill();
+  }
+}
+
+function emitParticles(pts,color,rate,baseSize){
+  if(!T('tPa'))return;
+  const density=V('pD')*rate;
+  const count=Math.floor(AU.energy*density);
+  for(let i=0;i<count;i++){
+    const idx=Math.floor(Math.random()*pts.length);
+    const p=pts[idx];
+    particles.push(new Particle(p.x,p.y,color,baseSize));
+  }
+  // Beat burst from fingertips / face oval
+  if(AU.beat){
+    const burstPts = pts.length > 100 ? 
+      [pts[10],pts[152],pts[33],pts[263],pts[61],pts[291]] : // face key points
+      pts.filter((_,i)=>FINGERTIPS.includes(i)); // hand fingertips
+    burstPts.forEach(p=>{
+      if(!p)return;
+      for(let j=0;j<5;j++){
+        const part=new Particle(p.x,p.y,C('cBt'),baseSize*2);
+        part.vx=(Math.random()-0.5)*5;
+        part.vy=(Math.random()-0.5)*5;
+        particles.push(part);
+      }
+    });
+  }
+}
+
+function emitHandTrails(pts,color){
+  if(!T('tPa'))return;
+  const trailStr=V('hT');
+  // Emit from fingertips proportional to trail strength
+  FINGERTIPS.forEach(ti=>{
+    const p=pts[ti];
+    if(!p)return;
+    const count=Math.floor(trailStr*AU.energy*3)+1;
+    for(let i=0;i<count;i++){
+      const part=new Particle(p.x,p.y,color,1.5*V('pS'));
+      part.vy=-0.5-Math.random()*1.5;
+      part.vx=(Math.random()-0.5)*0.8;
+      part.decay*=0.6; // longer life for trails
+      particles.push(part);
+    }
+  });
+  
+  // Joint trails (lighter)
+  FINGERS.forEach(finger=>{
+    finger.forEach(ji=>{
+      const p=pts[ji];
+      if(!p||Math.random()>0.3*trailStr)return;
+      particles.push(new Particle(p.x,p.y,color+'88',0.8*V('pS')));
+    });
+  });
+}
+
+function updateParticles(){
+  particles=particles.filter(p=>p.life>0);
+  if(particles.length>MAX_PARTICLES)particles.splice(0,particles.length-MAX_PARTICLES);
+  particles.forEach(p=>p.update());
+}
+
+function drawParticles(){
+  particles.forEach(p=>p.draw(ctx));
+  ctx.globalAlpha=1;
+}
+
+// ═══════════════════════════════
+// FACE CONTOURS
+// ═══════════════════════════════
+const FACE_OVAL=[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10];
+const L_EYE=[33,246,161,160,159,158,157,173,133,155,154,153,145,144,163,7,33];
+const R_EYE=[362,398,384,385,386,387,388,466,263,249,390,373,374,380,381,382,362];
+const LIPS_O=[61,146,91,181,84,17,314,405,321,375,291,409,270,269,267,0,37,39,40,185,61];
+const LIPS_I=[78,95,88,178,87,14,317,402,318,324,308,415,310,311,312,13,82,81,80,191,78];
+const L_BROW=[46,53,52,65,55,107,66,105,63,70,46];
+const R_BROW=[276,283,282,295,285,336,296,334,293,300,276];
+const NOSE_C=[168,6,197,195,5,4,1,19,94,2,164,0];
+const F_CONTOURS=[FACE_OVAL,L_EYE,R_EYE,LIPS_O,LIPS_I,L_BROW,R_BROW,NOSE_C];
+
+function drawContour(pts,idx,color,lw){
+  ctx.beginPath();
+  for(let i=0;i<idx.length;i++){
+    const p=pts[idx[i]];if(!p)continue;
+    if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+  }
+  ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.stroke();
+}
+
+function drawHandMesh(pts,color,lw){
+  HAND_CONNS.forEach(([a,b])=>{
+    const pa=pts[a],pb=pts[b];
+    if(!pa||!pb)return;
+    ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);
+    ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.stroke();
+  });
+  // Draw joints
+  if(T('tPt')){
+    pts.forEach((p,i)=>{
+      const sz=FINGERTIPS.includes(i)?V('lw')*2:V('lw')*1.2;
+      ctx.beginPath();ctx.arc(p.x,p.y,sz,0,Math.PI*2);
+      ctx.fillStyle=FINGERTIPS.includes(i)?color:'rgba(255,255,255,0.5)';
+      ctx.fill();
+    });
+    // Phalange arcs for detail
+    FINGERS.forEach(finger=>{
+      for(let j=0;j<finger.length-1;j++){
+        const p=pts[finger[j]];
+        ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
+        ctx.strokeStyle=color;ctx.lineWidth=0.5;ctx.stroke();
+      }
+    });
+  }
+}
+
+function drawFacePoints(pts,color){
+  if(!T('tPt'))return;
+  const sz=V('lw');
+  pts.forEach((p,i)=>{
+    if(i%2!==0)return;
+    ctx.beginPath();ctx.arc(p.x,p.y,sz,0,Math.PI*2);
+    ctx.fillStyle=color;ctx.fill();
+  });
+}
+
+// ═══════════════════════════════
+// FILTER RENDERERS
+// ═══════════════════════════════
+function renderAll(facePts,lhPts,rhPts){
+  const cF=C('cF'),cL=C('cL'),cR=C('cR'),cBt=C('cBt');
+  const lw=V('lw'),gl=V('gl');
+  const beatMix=Math.min(1,D.pulse*8);
+  const fColor=beatMix>0.05?lerpC(cF,cBt,beatMix):cF;
+
+  // Apply filter-specific setup
+  if(filter==='neon'||filter==='xray'){
+    ctx.shadowBlur=gl+AU.energy*15;
+    ctx.shadowColor=fColor;
+  }else if(filter==='hologram'){
+    // Scanlines
+    const scanY=(time*80+AU.bass*200)%H;
+    ctx.globalAlpha=0.03;
+    for(let y=0;y<H;y+=3){ctx.fillStyle=y%6===0?fColor:'transparent';ctx.fillRect(0,y,W,1);}
+    ctx.globalAlpha=0.1+AU.energy*0.06;
+    ctx.fillStyle=fColor;ctx.fillRect(0,scanY-12,W,24);
+    ctx.globalAlpha=0.6+Math.sin(time*10)*0.3+AU.energy*0.2;
+  }else if(filter==='glitch'){
+    // RGB split
+    const ga=5+AU.energy*20+D.pulse*40;
+    // Red channel offset
+    ctx.globalAlpha=0.3;
+    if(facePts.length&&T('tMs'))F_CONTOURS.forEach(c=>{
+      ctx.beginPath();
+      for(let i=0;i<c.length;i++){const p=facePts[c[i]];if(!p)continue;if(i===0)ctx.moveTo(p.x-ga,p.y);else ctx.lineTo(p.x-ga,p.y);}
+      ctx.strokeStyle=cL;ctx.lineWidth=lw;ctx.stroke();
+    });
+    if(lhPts)HAND_CONNS.forEach(([a,b])=>{const pa=lhPts[a],pb=lhPts[b];if(!pa||!pb)return;ctx.beginPath();ctx.moveTo(pa.x-ga,pa.y);ctx.lineTo(pb.x-ga,pb.y);ctx.strokeStyle=cL;ctx.lineWidth=lw;ctx.stroke();});
+    if(rhPts)HAND_CONNS.forEach(([a,b])=>{const pa=rhPts[a],pb=rhPts[b];if(!pa||!pb)return;ctx.beginPath();ctx.moveTo(pa.x-ga,pa.y);ctx.lineTo(pb.x-ga,pb.y);ctx.strokeStyle=cL;ctx.lineWidth=lw;ctx.stroke();});
+    ctx.globalAlpha=1;
+  }else if(filter==='thermal'){
+    // Thermal glow on face
+    if(facePts.length){
+      facePts.forEach((p,i)=>{
+        if(i%3!==0)return;
+        const heat=1-(p.z+0.1)/0.15+AU.energy*0.3;
+        const t=Math.max(0,Math.min(1,heat));
+        let color;
+        if(t<0.25)color=`rgb(0,0,${Math.round(t*4*255)})`;
+        else if(t<0.5)color=`rgb(${Math.round((t-0.25)*4*255)},0,255)`;
+        else if(t<0.75)color=`rgb(255,${Math.round((t-0.5)*4*255)},0)`;
+        else color=`rgb(255,255,${Math.round((t-0.75)*4*255)})`;
+        ctx.beginPath();ctx.arc(p.x,p.y,12+AU.energy*8,0,Math.PI*2);
+        const grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,12+AU.energy*8);
+        grd.addColorStop(0,color);grd.addColorStop(1,'transparent');
+        ctx.fillStyle=grd;ctx.globalAlpha=0.1;ctx.fill();
+      });
+    }
+    ctx.globalAlpha=1;
+  }
+
+  // ── Draw face mesh ──
+  if(facePts.length&&T('tMs')){
+    F_CONTOURS.forEach(c=>drawContour(facePts,c,fColor,lw));
+    // Grid
+    ctx.globalAlpha=0.15+AU.energy*0.2;
+    for(let i=0;i<facePts.length-8;i+=8){
+      ctx.beginPath();ctx.moveTo(facePts[i].x,facePts[i].y);ctx.lineTo(facePts[i+8].x,facePts[i+8].y);
+      ctx.strokeStyle=cF+'60';ctx.lineWidth=0.4;ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+  drawFacePoints(facePts,fColor);
+
+  // ── Draw hands ──
+  if(lhPts){
+    const lColor=beatMix>0.05?lerpC(cL,cBt,beatMix):cL;
+    if(filter==='neon'){ctx.shadowColor=cL;}
+    drawHandMesh(lhPts,lColor,lw*1.2);
+  }
+  if(rhPts){
+    const rColor=beatMix>0.05?lerpC(cR,cBt,beatMix):cR;
+    if(filter==='neon'){ctx.shadowColor=cR;}
+    drawHandMesh(rhPts,rColor,lw*1.2);
+  }
+
+  // Glitch random blocks
+  if(filter==='glitch'&&(Math.random()>0.82||AU.beat)){
+    ctx.fillStyle=AU.beat?cBt:fColor;
+    ctx.globalAlpha=0.08;
+    ctx.fillRect(0,Math.random()*H,W,3+Math.random()*12);
+    ctx.globalAlpha=1;
+  }
+
+  ctx.shadowBlur=0;
+}
+
+// ═══════════════════════════════
+// HOLISTIC RESULTS
+// ═══════════════════════════════
+let faceLM=null, leftHandLM=null, rightHandLM=null;
+
+function onResults(r){
+  faceLM=r.faceLandmarks||null;
+  leftHandLM=r.leftHandLandmarks||null;
+  rightHandLM=r.rightHandLandmarks||null;
+}
+
+// ═══════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════
+let fC=0,fT=0;
+let recorder=null,recording=false,chunks=[];
+
+function loop(){
+  requestAnimationFrame(loop);
+  time+=0.016;
+  audio();
+  updateDeform();
+
+  // Fade
+  ctx.fillStyle=`rgba(6,6,11,${0.2+(1-AU.energy)*0.25})`;
+  ctx.fillRect(0,0,W,H);
+
+  // Beat flash
+  if(D.pulse>0.02){
+    ctx.fillStyle=C('cBt');
+    ctx.globalAlpha=D.pulse*0.12;
+    ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha=1;
+  }
+
+  // Video
+  if(T('tV')&&video.readyState>=2){
+    ctx.save();ctx.globalAlpha=0.15;
+    if(T('tMi')){ctx.translate(W,0);ctx.scale(-1,1);}
+    ctx.drawImage(video,0,0,W,H);
+    ctx.restore();
+  }
+
+  ctx.save();
+  if(T('tMi')){ctx.translate(W,0);ctx.scale(-1,1);}
+
+  // ── Process face ──
+  let facePts=[];
+  if(faceLM){
+    let cx=0,cy=0;
+    faceLM.forEach(p=>{cx+=p.x*W;cy+=p.y*H;});
+    cx/=faceLM.length;cy/=faceLM.length;
+    facePts=faceLM.map((p,i)=>deformFace(p,i,cx,cy));
+    emitParticles(facePts,C('cP'),4,1.2);
+  }
+
+  // ── Process hands ──
+  let lhPts=null,rhPts=null;
+  if(leftHandLM){
+    const cx=leftHandLM[0].x*W,cy=leftHandLM[0].y*H;
+    lhPts=deformHand(leftHandLM,cx,cy);
+    emitHandTrails(lhPts,C('cL'));
+    emitParticles(lhPts,C('cL'),2,1);
+  }
+  if(rightHandLM){
+    const cx=rightHandLM[0].x*W,cy=rightHandLM[0].y*H;
+    rhPts=deformHand(rightHandLM,cx,cy);
+    emitHandTrails(rhPts,C('cR'));
+    emitParticles(rhPts,C('cR'),2,1);
+  }
+
+  // ── Particles (behind mesh) ──
+  updateParticles();
+  drawParticles();
+
+  // ── Render mesh on top ──
+  renderAll(facePts,lhPts,rhPts);
+
+  ctx.restore();
+
+  // FPS
+  fC++;const now=performance.now();
+  if(now-fT>500){$('fps').textContent=Math.round(fC/((now-fT)/1000))+' fps';fC=0;fT=now;}
+}
+
+// ═══════════════════════════════
+// INIT
+// ═══════════════════════════════
+async function init(){
+  const s=$('stat');
+  try{
+    s.textContent='Starting mic...';
+    const aStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    analyser=audioCtx.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=0.8;
+    audioCtx.createMediaStreamSource(aStream).connect(analyser);
+    freqA=new Uint8Array(analyser.frequencyBinCount);
+    timeA=new Uint8Array(analyser.frequencyBinCount);
+
+    s.textContent='Loading Holistic model...';
+    const holistic=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
+    holistic.setOptions({
+      modelComplexity:1,
+      smoothLandmarks:true,
+      enableSegmentation:false,
+      smoothSegmentation:false,
+      refineFaceLandmarks:true,
+      minDetectionConfidence:0.5,
+      minTrackingConfidence:0.5
+    });
+    holistic.onResults(onResults);
+
+    s.textContent='Starting camera...';
+    const cStream=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:'user'}});
+    video.srcObject=cStream;await video.play();
+
+    const camera=new Camera(video,{
+      onFrame:async()=>{await holistic.send({image:video});},
+      width:1280,height:720
+    });
+    await camera.start();
+
+    $('ov').classList.add('hidden');
+    loop();
+  }catch(e){
+    s.textContent='❌ '+e.message;
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════
+// CAPTURE
+// ═══════════════════════════════
+function screenshot(){
+  const a=document.createElement('a');
+  a.download=`face_hands_${Date.now()}.png`;
+  a.href=canvas.toDataURL('image/png');a.click();
+}
+
+function toggleRec(){
+  if(!recording){
+    const stream=canvas.captureStream(30);
+    // Mix canvas video with mic audio
+    if(audioCtx){
+      const dest=audioCtx.createMediaStreamDestination();
+      audioCtx.createMediaStreamSource(
+        new MediaStream(video.srcObject.getAudioTracks().length?video.srcObject.getAudioTracks():[])
+      );
+      // Just capture canvas for now
+    }
+    recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9',videoBitsPerSecond:5000000});
+    chunks=[];
+    recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+    recorder.onstop=()=>{
+      const blob=new Blob(chunks,{type:'video/webm'});
+      const a=document.createElement('a');
+      a.download=`face_hands_${Date.now()}.webm`;
+      a.href=URL.createObjectURL(blob);a.click();
+    };
+    recorder.start();
+    recording=true;
+    $('recBtn').textContent='⏹ Stop';
+    $('recBtn').classList.add('active');
+  }else{
+    recorder.stop();
+    recording=false;
+    $('recBtn').textContent='⏺ Record';
+    $('recBtn').classList.remove('active');
+  }
+}
+</script>
+</body>
+</html>

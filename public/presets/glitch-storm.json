@@ -1,0 +1,12 @@
+{
+  "name": "Glitch Storm",
+  "author": "meshify",
+  "version": 1,
+  "filter": "glitch",
+  "face": { "dBass": 2.0, "dMid": 2.5, "dHigh": 3.0, "dBeat": 2.0 },
+  "hands": { "hSplay": 2.5, "hWave": 2.0, "hTrails": 1.5 },
+  "physics": { "spring": 0.15, "moodSens": 2.0 },
+  "particles": { "density": 2.5, "life": 0.6, "size": 1.5 },
+  "rendering": { "lineW": 1.0, "glow": 5 },
+  "colors": { "face": "#33ff33", "leftHand": "#ff3333", "rightHand": "#3333ff", "beat": "#ffff33", "particles": "#33ffff" }
+}

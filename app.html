@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meshify — Audio Reactive Face Visualizer</title>
+<meta name="description" content="Real-time audio-reactive face & hand mesh visualizer. 468-point face mesh + hand tracking with particle trails.">
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/styles/shared.css">
+<link rel="stylesheet" href="/styles/app.css">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo"><div class="dot"></div>MESHIFY</div>
+  <div class="controls">
+
+    <div class="stitle">Audio</div>
+    <div class="meter-row"><span class="meter-label">Bass</span><div class="meter-bar"><div class="meter-fill m-bass" id="mB"></div></div></div>
+    <div class="meter-row"><span class="meter-label">Mid</span><div class="meter-bar"><div class="meter-fill m-mid" id="mM"></div></div></div>
+    <div class="meter-row"><span class="meter-label">High</span><div class="meter-bar"><div class="meter-fill m-high" id="mH"></div></div></div>
+    <div class="meter-row"><span class="meter-label">Nrg</span><div class="meter-bar"><div class="meter-fill m-nrg" id="mN"></div></div></div>
+    <div class="mood-badge" id="mood">Silent</div>
+
+    <div class="stitle">Visual Mode</div>
+    <div class="fgrid">
+      <button class="fb active" data-f="wireframe">Wire</button>
+      <button class="fb" data-f="neon">Neon</button>
+      <button class="fb" data-f="hologram">Holo</button>
+      <button class="fb" data-f="glitch">Glitch</button>
+      <button class="fb" data-f="thermal">Thermal</button>
+      <button class="fb" data-f="xray">X-Ray</button>
+    </div>
+
+    <div class="stitle">Face Deformation</div>
+    <div class="sg"><div class="sh"><span>Bass → Expand</span><span class="sv" id="v_dB">1.0</span></div><input type="range" id="dB" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Mid → Wobble</span><span class="sv" id="v_dM">1.0</span></div><input type="range" id="dM" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>High → Jitter</span><span class="sv" id="v_dH">0.8</span></div><input type="range" id="dH" min="0" max="3" step="0.1" value="0.8"></div>
+    <div class="sg"><div class="sh"><span>Beat → Pulse</span><span class="sv" id="v_dP">1.2</span></div><input type="range" id="dP" min="0" max="3" step="0.1" value="1.2"></div>
+
+    <div class="stitle">Hand Deformation</div>
+    <div class="sg"><div class="sh"><span>Finger Splay</span><span class="sv" id="v_hS">1.0</span></div><input type="range" id="hS" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Hand Wave</span><span class="sv" id="v_hW">1.0</span></div><input type="range" id="hW" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Finger Trails</span><span class="sv" id="v_hT">1.5</span></div><input type="range" id="hT" min="0" max="3" step="0.1" value="1.5"></div>
+
+    <div class="stitle">Physics</div>
+    <div class="sg"><div class="sh"><span>Spring-back</span><span class="sv" id="v_sp">0.08</span></div><input type="range" id="sp" min="0.01" max="0.3" step="0.01" value="0.08"></div>
+    <div class="sg"><div class="sh"><span>Mood Sensitivity</span><span class="sv" id="v_ms">1.0</span></div><input type="range" id="ms" min="0.2" max="3" step="0.1" value="1.0"></div>
+
+    <div class="stitle">Particles</div>
+    <div class="sg"><div class="sh"><span>Trail Density</span><span class="sv" id="v_pD">1.0</span></div><input type="range" id="pD" min="0" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Trail Life</span><span class="sv" id="v_pL">1.0</span></div><input type="range" id="pL" min="0.2" max="3" step="0.1" value="1.0"></div>
+    <div class="sg"><div class="sh"><span>Trail Size</span><span class="sv" id="v_pS">1.0</span></div><input type="range" id="pS" min="0.3" max="3" step="0.1" value="1.0"></div>
+
+    <div class="stitle">Rendering</div>
+    <div class="sg"><div class="sh"><span>Line Width</span><span class="sv" id="v_lw">1.5</span></div><input type="range" id="lw" min="0.3" max="4" step="0.1" value="1.5"></div>
+    <div class="sg"><div class="sh"><span>Glow</span><span class="sv" id="v_gl">8</span></div><input type="range" id="gl" min="0" max="40" step="1" value="8"></div>
+
+    <div class="stitle">Colors</div>
+    <div class="color-row"><label>Face</label><input type="color" id="cF" value="#00ffaa"></div>
+    <div class="color-row"><label>Left Hand</label><input type="color" id="cL" value="#ff3366"></div>
+    <div class="color-row"><label>Right Hand</label><input type="color" id="cR" value="#5533ff"></div>
+    <div class="color-row"><label>Beat Flash</label><input type="color" id="cBt" value="#ffaa22"></div>
+    <div class="color-row"><label>Particles</label><input type="color" id="cP" value="#00ccff"></div>
+
+    <div class="stitle">Display</div>
+    <div class="trow"><span>Video Feed</span><div class="tgl" id="tV"></div></div>
+    <div class="trow"><span>Points</span><div class="tgl on" id="tPt"></div></div>
+    <div class="trow"><span>Mesh Lines</span><div class="tgl on" id="tMs"></div></div>
+    <div class="trow"><span>Particles</span><div class="tgl on" id="tPa"></div></div>
+    <div class="trow"><span>Mirror</span><div class="tgl on" id="tMi"></div></div>
+
+    <div class="stitle">Presets</div>
+    <div id="preset-container"></div>
+
+    <div class="stitle">Capture</div>
+    <div class="capture-row">
+      <button class="fb" id="photoBtn">Photo</button>
+      <button class="fb" id="recBtn">Record</button>
+    </div>
+    <div class="share-row">
+      <button class="fb" id="shareBtn">Share</button>
+    </div>
+
+    <div class="ad-slot-sidebar" aria-label="Advertisement"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="top-bar">
+    <span>468 face + 42 hand landmarks · particle trails</span>
+    <span class="fps" id="fps">--</span>
+  </div>
+  <div class="canvas-wrap">
+    <video id="cam" autoplay playsinline></video>
+    <canvas id="out" width="1280" height="720"></canvas>
+    <div class="ov" id="ov">
+      <h1>Meshify</h1>
+      <p>Audio-reactive face &amp; hand tracking with particle trails. Your mesh deforms with the music and leaves glowing traces in the air. Needs camera + microphone.</p>
+      <button class="sbtn" id="startBtn">Enable Camera + Mic</button>
+      <div class="stat" id="stat"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

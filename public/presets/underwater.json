@@ -1,0 +1,12 @@
+{
+  "name": "Underwater",
+  "author": "meshify",
+  "version": 1,
+  "filter": "hologram",
+  "face": { "dBass": 0.8, "dMid": 1.5, "dHigh": 0.4, "dBeat": 0.6 },
+  "hands": { "hSplay": 0.6, "hWave": 2.0, "hTrails": 2.0 },
+  "physics": { "spring": 0.03, "moodSens": 1.2 },
+  "particles": { "density": 1.5, "life": 2.0, "size": 0.8 },
+  "rendering": { "lineW": 1.0, "glow": 15 },
+  "colors": { "face": "#00aaff", "leftHand": "#0066cc", "rightHand": "#0088ff", "beat": "#00ffee", "particles": "#004488" }
+}

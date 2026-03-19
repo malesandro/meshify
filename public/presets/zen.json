@@ -1,0 +1,12 @@
+{
+  "name": "Zen",
+  "author": "meshify",
+  "version": 1,
+  "filter": "wireframe",
+  "face": { "dBass": 0.5, "dMid": 0.8, "dHigh": 0.2, "dBeat": 0.3 },
+  "hands": { "hSplay": 0.4, "hWave": 0.8, "hTrails": 1.0 },
+  "physics": { "spring": 0.03, "moodSens": 0.6 },
+  "particles": { "density": 0.5, "life": 2.5, "size": 0.6 },
+  "rendering": { "lineW": 0.8, "glow": 3 },
+  "colors": { "face": "#aaccff", "leftHand": "#88aadd", "rightHand": "#6688bb", "beat": "#ccddff", "particles": "#446699" }
+}

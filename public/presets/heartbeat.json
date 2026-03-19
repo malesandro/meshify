@@ -1,0 +1,12 @@
+{
+  "name": "Heartbeat",
+  "author": "meshify",
+  "version": 1,
+  "filter": "neon",
+  "face": { "dBass": 2.0, "dMid": 0.5, "dHigh": 0.3, "dBeat": 2.5 },
+  "hands": { "hSplay": 1.5, "hWave": 0.5, "hTrails": 1.0 },
+  "physics": { "spring": 0.12, "moodSens": 1.0 },
+  "particles": { "density": 0.8, "life": 0.8, "size": 1.5 },
+  "rendering": { "lineW": 2.5, "glow": 20 },
+  "colors": { "face": "#ff2244", "leftHand": "#ff4466", "rightHand": "#cc0033", "beat": "#ff0000", "particles": "#ff6688" }
+}
